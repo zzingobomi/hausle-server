@@ -1,8 +1,10 @@
 import { Vec3, Vec4 } from "../rooms/schema/Vector";
 import { Managers } from "../core/managers/Managers";
 import { DungeonRoomState } from "../rooms/schema/DungeonRoomState";
-import * as Utils from "../utils/Utils";
 import { Transform } from "../rooms/schema/Transform";
+import { MathUtils, Mesh, Vector3 } from "three";
+import * as Utils from "../utils/Utils";
+//import { TargetPointList } from "./TargetPoint";
 
 export class DungeonWorld {
   private roomState: DungeonRoomState;
@@ -19,6 +21,15 @@ export class DungeonWorld {
   private async initWorld() {
     const dungeonGltf = await Utils.loadGLTFModel(
       `http://${process.env.ASSECTS_SERVER}/hausle/Dungeon.glb`
+    );
+
+    Managers.Pathfinder.Init(
+      dungeonGltf.scene.getObjectByName("Navmesh") as Mesh
+    );
+
+    Managers.Npcs.Init(
+      this.roomState,
+      dungeonGltf.scene.getObjectByName("Target")
     );
 
     this.gameLoop();
@@ -52,7 +63,8 @@ export class DungeonWorld {
   /// Player
   ///
   public CreateCharacter(sessionId: string) {
-    return new Transform();
+    const startPosition = this.getStartPosition();
+    return new Transform(startPosition);
   }
 
   public RemoveCharacter(sessionId: string) {}
@@ -69,5 +81,38 @@ export class DungeonWorld {
 
   public UpdatePlayerState(sessionId: string, state: string) {
     // TODO:
+  }
+
+  private getStartPosition(): Vec3 {
+    let newPosition = new Vector3(0, 0, 0);
+
+    if (this.checkCharacterDistance(newPosition)) {
+      return Utils.three2Vec3(newPosition);
+    }
+
+    let count = 0;
+    while (true) {
+      const lowNumber = Math.floor(count / 100);
+      const randX = MathUtils.randFloat(lowNumber - 1, lowNumber + 1);
+      const randZ = MathUtils.randFloat(lowNumber, lowNumber + 1);
+      newPosition = new Vector3(randX, 0, randZ);
+
+      if (this.checkCharacterDistance(newPosition)) {
+        return Utils.three2Vec3(newPosition);
+      }
+
+      count++;
+    }
+  }
+
+  private checkCharacterDistance(position: Vector3): boolean {
+    for (const player of this.roomState.players.values()) {
+      const playerPosition = Utils.vec32three(player.transform.position);
+      if (playerPosition.distanceTo(position) < 1) {
+        return false;
+      }
+    }
+
+    return true;
   }
 }

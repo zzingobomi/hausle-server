@@ -1,8 +1,11 @@
 import { Room, Client } from "colyseus";
+import { SignalType } from "../core/SignalType";
 import { EventPacket } from "../shared/EventPacket";
 import { DungeonWorld } from "../world/DungeonWorld";
 import { DungeonRoomState } from "./schema/DungeonRoomState";
 import { Vec3, Vec4 } from "./schema/Vector";
+import * as Utils from "../utils/Utils";
+import PubSub from "pubsub-js";
 
 export class DungeonRoom extends Room<DungeonRoomState> {
   autoDispose: boolean = false;
@@ -75,5 +78,25 @@ export class DungeonRoom extends Room<DungeonRoomState> {
     );
   }
 
-  registSubscribes() {}
+  registSubscribes() {
+    // Npc
+    PubSub.subscribe(SignalType.UPDATE_NPC_POSITION, (msg, data) => {
+      this.state.UpdateNpcPosition(
+        data.networkId,
+        Utils.three2Vec3(data.position)
+      );
+    });
+    PubSub.subscribe(SignalType.UPDATE_NPC_QUATERNION, (msg, data) => {
+      this.state.UpdateNpcQuaternion(
+        data.networkId,
+        Utils.three2Vec4(data.quaternion)
+      );
+    });
+    PubSub.subscribe(SignalType.UPDATE_NPC_SCALE, (msg, data) => {
+      this.state.UpdateNpcScale(data.networkId, Utils.three2Vec3(data.scale));
+    });
+    PubSub.subscribe(SignalType.UPDATE_NPC_STATE, (msg, data) => {
+      this.state.UpdateNpcState(data.networkId, data.stateName);
+    });
+  }
 }
