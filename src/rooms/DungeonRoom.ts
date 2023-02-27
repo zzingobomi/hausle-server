@@ -76,6 +76,19 @@ export class DungeonRoom extends Room<DungeonRoomState> {
         this.state.UpdatePlayerState(client.sessionId, state);
       }
     );
+
+    // Chatting
+    this.onMessage(
+      EventPacket.ChattingSend,
+      (client: Client, message: string) => {
+        const player = this.state.players.get(client.sessionId);
+        this.broadcast(EventPacket.ChattingReceive, {
+          sessionId: client.sessionId,
+          message,
+          time: Date.now(),
+        });
+      }
+    );
   }
 
   registSubscribes() {
