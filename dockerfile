@@ -7,5 +7,5 @@ RUN npm run build
 
 WORKDIR /hausle-server/lib
 
-EXPOSE 17100
+EXPOSE 17300
 CMD ["node", "index.js"]
