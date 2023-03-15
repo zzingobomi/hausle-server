@@ -90,14 +90,22 @@ export class NonplayerCharacter extends Object3D {
     });
 
     setTimeout(() => {
-      const targetPosition = Managers.Npcs.GetRandomTarget();
-      const path = Managers.Pathfinder.GetPath(this.position, targetPosition);
-      this.SetPath(path);
-
-      PubSub.publish(SignalType.UPDATE_NPC_STATE, {
-        networkId: this.uuid,
-        stateName: CharStateType.Walk,
-      });
+      let count = 0;
+      while (count < 10) {
+        const targetPosition = Managers.Npcs.GetRandomTarget();
+        const path = Managers.Pathfinder.GetPath(this.position, targetPosition);
+        if (!path || path.length === 0) {
+          count++;
+        } else {
+          this.SetPath(path);
+          PubSub.publish(SignalType.UPDATE_NPC_STATE, {
+            networkId: this.uuid,
+            stateName: CharStateType.Walk,
+          });
+          return;
+        }
+      }
+      console.log("randon target not found");
     }, searchTime * 1000);
   }
 }
